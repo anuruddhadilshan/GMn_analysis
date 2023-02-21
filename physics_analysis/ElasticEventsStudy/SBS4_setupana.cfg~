@@ -1,0 +1,16 @@
+/volatile/halla/sbs/adr/Rootfiles/gmn_parsed/SBS4/pass0/gmn_parsed_SBS4_targLD2_sbsmagscale50.root
+endlist
+sbs.hcal.nclus>0&&bb.ps.nclus>0&&bb.sh.nclus>0&&abs(bb.tr.vz)<0.08&&bb.gem.track.nhits[0]>3&&bb.tr.n==1
+endcut
+W2_min 0.48
+W2_max 1.28
+vzcut 0.075
+pse_min 0.15
+eoverp_leftcut 0.707812
+eoverp_rightcut 1.24429
+hcal_energycut 0.0552914
+bbcal_energycut 1.87841
+trigdiff_leftcut 489.392
+trigdiff_rightcut 565.0
+hcal_clusblk_ADCtime_leftcut 29.1744
+hcal_clusblk_ADCtime_rightcut 74.5215
