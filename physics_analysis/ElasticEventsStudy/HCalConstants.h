@@ -12,5 +12,7 @@ const double hcal_botXpos = 1.454995; // Distance to the bottom of the HCal w.r.
 const double hcal_leftYpos = 0.92964; // Distance to the left side of HCal (when looking from up-stream to down-stream direction) w.r.t HCal origin.
 const double hcal_rightYpos = -0.92964; // Distance to the right side of HCal (when looking from up-stream to down-stream direction) w.r.t HCal origin.
 const double hcal_height_abovebeamline = -0.2897; // Vertical distance (X) of the HCal origin above beamline.
+//const double hcal_height_abovebeamline = -0.75; // Vertical distance (X) of the HCal origin above beamline.
+
 
 #endif

@@ -1,7 +1,6 @@
 // Macro to fit the dx plots with two gausians for n and p peaks and a polynormial for inelastic background.
 // Only to be used for LD2 data.
 
-
 void fit_sub_ranges(TTree*, TCanvas*, const int, double [100]);
 void do_total_fit(double&, double&, TTree*, TCanvas*, const int, double [100], double[100]);
 void draw_result_functions(TTree*, TCanvas*,const int, double[100], double, double);
@@ -44,8 +43,7 @@ void fit_dx_plots(const char* rootfile, TString  outputname = "sbsx_sbsfield_ype
 	TCanvas* C4; // = new TCanvas("C4", dy_plot, 800, 800);
 	TCanvas* C5; // = new TCanvas("C5", compare_backg_plot, 800, 800);
 	compare_backgfunc_withdycut_dxdat(T, outputname, C4, C5, n_polynomial, totalfit_lowlimit, totalfit_highlimit, par_from_totalfit);
-
-
+	
 	C1->SaveAs(Form("%s.png", outputname.Data()));
 	C2->SaveAs(Form("%s.png", totalfit_plot.Data()));
 	C3->SaveAs(Form("%s.png", results_plot.Data()));

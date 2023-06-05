@@ -319,7 +319,7 @@ double hcal_clusblk_ADCtime_rightcut{0.};
 void hcal_clusblk_ADCtime_cut(TH1D* h1_hcal_clusblk_ADCtime, TCanvas* C)
 {
 	C->cd();
-	TF1* gaus_fit = new TF1("gaus_fit", "gaus", 40, 65); // <<<<< ADJUST THE RANGE HERE TO GET THE FIT RIGHT.
+	TF1* gaus_fit = new TF1("gaus_fit", "gaus", 20, 50); // <<<<< ADJUST THE RANGE HERE TO GET THE FIT RIGHT.
 	h1_hcal_clusblk_ADCtime->Fit(gaus_fit,"R");
 	double mean{gaus_fit->GetParameter(1)};
 	double sigma{gaus_fit->GetParameter(2)};
@@ -547,7 +547,7 @@ void definecuts(const int kine_num, const char* configfilename = "setup_definecu
  	TString bbcalEcut_pngName = outputfilename+"_bbcalEcut.png";
  	c[6]->SaveAs(bbcalEcut_pngName);
 
-	bbCal_HCal_coincut(h1_bbcal_hcal_tdiff,c[7]);
+	//bbCal_HCal_coincut(h1_bbcal_hcal_tdiff,c[7]);
 	TString coincut_pngName = outputfilename+"_coincut.png";
  	c[7]->SaveAs(coincut_pngName);
 

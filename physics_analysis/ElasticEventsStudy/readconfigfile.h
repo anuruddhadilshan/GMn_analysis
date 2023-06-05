@@ -16,6 +16,8 @@ double trigdiff_leftcut{0.};
 double trigdiff_rightcut{0.};
 double hcal_clusblk_ADCtime_leftcut{0.};
 double hcal_clusblk_ADCtime_rightcut{0.};
+double mc_Neventsgen{0.};
+double mc_Ibeam_uA{0.};
 
 void readin_anaconfigfile( const char* configfilename, TChain* C )
 {
@@ -138,6 +140,20 @@ void readin_anaconfigfile( const char* configfilename, TChain* C )
       			TString sval = ( (TObjString*)(*tokens)[1] )->GetString();
 				hcal_clusblk_ADCtime_rightcut = sval.Atof();
 				cout << "hcal_clusblk_ADCtime_rightcut (ns): " << hcal_clusblk_ADCtime_rightcut << endl;
+      		}
+
+      		if( skey == "mc_Neventsgen")
+      		{
+      			TString sval = ( (TObjString*)(*tokens)[1] )->GetString();
+				mc_Neventsgen = sval.Atof();
+				cout << "Number of events simulated: " << mc_Neventsgen << endl;
+      		}
+
+      		if( skey == "mc_Ibeam_uA")
+      		{
+      			TString sval = ( (TObjString*)(*tokens)[1] )->GetString();
+				mc_Ibeam_uA = sval.Atof();
+				cout << "Beam current used in the simulation: " << mc_Ibeam_uA << endl;
       		}
 
       		delete tokens;

@@ -1001,7 +1001,7 @@ double lookup_run_info( int runnum, TString lookup_var){
 		,{13799,12,1470,750,-607,70,1}
 	};
 	
-	for( size_t i = 0; i < all_run_info.size(); i++){
+	for(size_t i = 0; i < all_run_info.size(); i++){
 		if( all_run_info[i][0] == runnum ){
 			if( !(strncmp(lookup_var, "beam_current", 12)) ){
 				return_var = all_run_info[i][1];

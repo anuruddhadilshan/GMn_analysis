@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Written by Anuruddha Rathanayke																	 						     //
-// Feb 8 , 2023																												     //
-// This is an extention of elastix_5.C script. With an addition of the function of outputting a TTree with the analysis results. // 
+// April 11 , 2023  																										     //
+// Modifying "gmn_ana_dxdy.C" to analyze simulation data.                                                                        // 
 // 																															     //
 // 1) Reads in confiugaration file and get the *parsed* root files to be analyzed and the cuts to be used.						 //
 // 2) Run the analysis with all the cuts applied and makes the "dx", "dy" and "dx vs dy" plots. 								 //
@@ -26,15 +26,17 @@
 #include "HCalConstants.h"
 #include "calc_HCalintersect.h"
 #include "fiducialcut.h"
+#include "constants.h"
+#include "exprconstants.h"
 
-const double target_mass{0.5*(0.938272+0.939565)}; //Average of neutron and proton mass.
+const double target_mass{0.5*(Constants::n_mass + Constants::p_mass)}; //Average of neutron and proton mass. 
 
 void apply_globalcuts(TChain*, TEventList*, long&, long&);
 void get_TDC_times(int, double [1000], double [1000], double&, double&, double&, double&);
 void print_analysis_percentage(double, int&);
 
 
-void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* configfilename = "setup_analysis.cfg", const char* outputrootfilename = "gmn_ana_output")
+void gmn_MC_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* configfilename = "setup_analysis.cfg", const char* outputrootfilename = "gmn_MC_ana_output")
 {
 	auto total_time_start = std::chrono::high_resolution_clock::now();
 
@@ -58,7 +60,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	const int MAXNTRACKS{10};
 	const int MAXNTDC{1000};
 
-	//variables needed are BigBite track px,py,pz and sbs hcal x,y,e
+	//Variables needed are BigBite track px,py,pz and sbs hcal x,y,e
  	double ntrack{0.};
  	double vz[MAXNTRACKS];
 	double epx[MAXNTRACKS];
@@ -74,6 +76,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	double tdc_elemID[MAXNTDC];
 	int ndata_tdc{0};
 	double hcal_clusblk_ADC_time[15]; // Maximum number of blocks in a cluster is 15 as per S.Seeds.
+	double mc_sigma {0.};
+	double mc_omega {0.};
 
 	C->SetBranchStatus("*",0);
 	C->SetBranchStatus("bb.tr.n",1);
@@ -91,6 +95,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	C->SetBranchStatus("bb.tdctrig.tdcelemID",1);
 	C->SetBranchStatus("Ndata.bb.tdctrig.tdcelemID",1);
 	C->SetBranchStatus("sbs.hcal.clus_blk.atime",1);
+	C->SetBranchStatus("MC.mc_sigma",1);
+	C->SetBranchStatus("MC.mc_omega",1);
 
 	C->SetBranchAddress("bb.tr.n",&ntrack);
 	C->SetBranchAddress("bb.tr.vz",vz);
@@ -107,6 +113,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	C->SetBranchAddress("bb.tdctrig.tdcelemID",tdc_elemID);
 	C->SetBranchAddress("Ndata.bb.tdctrig.tdcelemID",&ndata_tdc);
 	C->SetBranchAddress("sbs.hcal.clus_blk.atime",hcal_clusblk_ADC_time);
+	C->SetBranchAddress("MC.mc_sigma",&mc_sigma);
+	C->SetBranchAddress("MC.mc_omega",&mc_omega);
 
 
 	TFile* fout = new TFile(Form("%s.root",outputrootfilename),"RECREATE");
@@ -120,8 +128,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	double delta_x{0.};
 	double delta_y{0.};
 	double bbcalHcal_time_diff{0};
-	double ps_sh_e{};
-	double e_over_p{};
+	double ps_sh_e{0.};
+	double e_over_p{0.};
+	double weight{0.};
 
 	// Output tree branch definitions.
 	tree->Branch("ekine.W2", &W2);
@@ -138,6 +147,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	tree->Branch("sbs.hcal.yexpect", &yexpected_hcal);
 	tree->Branch("sbs.hcal.dx", &delta_x);
 	tree->Branch("sbs.hcal.dy", &delta_y);
+	tree->Branch("mc.weight", &weight);
 
 	// Histogram definitions.
 	TH1D* h1_W2_all = new TH1D("h1_W2_all","W^2 of all the events passing the global cut; W^2 (GeV^2/c^4)",250,-1,4);
@@ -150,10 +160,10 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	TH1D* h1_hcal_e_withcuts = new TH1D("h1_hcal_e_withcuts","HCal Energy Deopsited; HCal Energy (GeV)",750,0,1.5);
 	//TH1D* h1_bbcal_hcal_tdiff_withcuts = new TH1D("h1_bbcal_hcal_tdiff_withcuts","HCal time - BBCal time; HCal_{time}-BBCal_{time} (ns)",300,400,700);
 	TH1D* h1_hcal_clusblk_ADCtime_withcuts = new TH1D("h1_hcal_clusblk_ADCtime_withcuts","ADC time of the highest energy block in the largest cluster; ADC Time (ns)",300,-100,200);
-	TH2D* h2_dxdy_all = new TH2D("h2_dxdy_all","HCal delta plot - All events;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
+	TH2D* h2_dxdy_all = new TH2D("h2_dxdy_all","HCal delta plots - All events;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
 	TH2D* h2_dxdy_withcuts_beforefiducial = new TH2D("h2_dxdy_withcuts_beforefiducial","HCal delta plots - good events with all cuts except fiducial cut;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
-	TH2D* h2_dxdy_withcuts = new TH2D("h2_dxdy_withcuts","HCal delta plot - good events with all cuts;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
-	TH2D* h2_dxdy_failfiducial = new TH2D("h2_dxdy_failfiducial","HCal delta plot - events that fail the fiducial cut;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
+	TH2D* h2_dxdy_withcuts = new TH2D("h2_dxdy_withcuts","HCal delta plots - good events with all cuts;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
+	TH2D* h2_dxdy_failfiducial = new TH2D("h2_dxdy_failfiducial","HCal delta plots - events that fail the fiducial cut;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
 	//TH2D* h2_dxdy_ = new TH2D("h2_dxdy_withcuts_afterfiducial","HCal delta plots - good events with all cuts;Y_{HCal}-Y_{expected} (m);X_{HCal}-X_{expected} (m)",125,-2,2,125,-4,6);
 	TH1D* h1_dx_all = new TH1D("h1_dx_all","dx - All events;X_{HCal}-X_{expected} (m)",1000,-4,6);
 	TH1D* h1_dx_withcuts = new TH1D("h1_dx_withcuts","dx - with cuts;X_{HCal}-X_{expected} (m)",1000,-4,6);
@@ -170,7 +180,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	TLorentzVector Pbeam(0,0,Ebeam,Ebeam);
 	TLorentzVector Ptarg(0,0,0,target_mass);
 
-	make_HCal_vectors(hcaldist,hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
+	make_HCal_vectors_forsim(hcaldist,hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
+	//make_HCal_vectors_forsim(hcaldist,sbstheta);
 
 	//const double tdiffmax = 20; // Max deviation from coin via tdctrig cut.
 
@@ -191,6 +202,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	long n_fiducialcut{0};
 	long n_hcal_clusblk_atime_cut{0};
 
+	// Luminosity - to calculate weight
+	double luminosity{Exprconstants::lD2_lumifactor * mc_Ibeam_uA};
+
 	while (C->GetEntry(elist->GetEntry(nevent++)))
 	{
 		
@@ -205,14 +219,17 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		W2 = (Ptarg+q).M2();    // Calculates the invariant mass squared (W^2) of the virtual photon - nucleon system.
 		h1_W2_all->Fill(W2);
 
+		// Calculating weight
+		weight = mc_sigma*mc_omega*luminosity/mc_Neventsgen;
+
 		// Calculating the dx and dy for hits on HCal
 		calc_expected_xyonHCal(q,vz,xexpected_hcal,yexpected_hcal); // Calculating the intersection point on HCal.
 		delta_x = xhcal-xexpected_hcal;
 		delta_y = yhcal-yexpected_hcal;
 		// Fill dx dy histos with all the events.
-		h2_dxdy_all->Fill(delta_y,delta_x);
-		h1_dx_all->Fill(delta_x);
-		h1_dy_all->Fill(delta_y);
+		h2_dxdy_all->Fill(delta_y,delta_x,weight);
+		h1_dx_all->Fill(delta_x,weight);
+		h1_dy_all->Fill(delta_y,weight);
 				
 		// Calculate BBCal and HCal coincidence times
 		double bbcal_time{0.};
@@ -339,13 +356,13 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		h1_hcal_e_withcuts->Fill(hcal_e);
 		//h1_bbcal_hcal_tdiff_withcuts->Fill(bbcalHcal_time_diff);
 		h1_hcal_clusblk_ADCtime_withcuts->Fill(hcal_clusblk_ADC_time[0]);
-		h2_dxdy_withcuts->Fill(delta_y,delta_x);
-		h1_dx_withcuts->Fill(delta_x);
-		h1_dy_withcuts->Fill(delta_y);
+		h2_dxdy_withcuts->Fill(delta_y,delta_x,weight);
+		h1_dx_withcuts->Fill(delta_x,weight);
+		h1_dy_withcuts->Fill(delta_y,weight);
 		//h1_hcalx->Fill(xhcal);
 		//h1_hcaly->Fill(yhcal);
 		//h2_hcal_xy->Fill(yhcal,xhcal);
-		h2_hcal_xyexpected->Fill(yexpected_hcal,xexpected_hcal);
+		h2_hcal_xyexpected->Fill(yexpected_hcal,xexpected_hcal,weight);
 
 		// Fill the tree
 		tree->Fill();

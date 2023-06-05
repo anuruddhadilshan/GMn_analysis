@@ -5,7 +5,7 @@
 
 // Find Average Proton Deflection from the SBS magnet for a given kinematic setting and SBS magnet field scale.
 // Found by seeing how much the LH2 data gets shifted by the SBS magnet for the given kinematic setting and SBS magnet field scale.
-vector<vector<double>> avg_proton_deflection_onHCal = { //{kinematicsetting(sbs #), sbs fieldscale, avg proton deflection from the analysis of the LH2 data}
+std::vector<std::vector<double>> avg_proton_deflection_onHCal = { //{kinematicsetting(sbs #), sbs fieldscale, avg proton deflection from the analysis of the LH2 data}
 	{4, 0, 0},
 	{4, 30.0, -0.66863820},
 	{4, 50.0, -1.1193552},
