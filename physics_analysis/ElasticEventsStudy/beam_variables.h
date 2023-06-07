@@ -9,22 +9,22 @@ double lookup_beam_energy( int runnum ){
 	double beam_energy = 0;
 
 	if( runnum >= 11436 && runnum <= 11616 ){
-		beam_energy = 3.728;
+		beam_energy = 3.7393;
 	}
 	else if( runnum >= 11989 && runnum <= 12073 ){
-		beam_energy = 7.906;
+		beam_energy = 7.9308;
 	}
 	else if( runnum >= 12313 && runnum <= 13063 ){
-		beam_energy = 9.91;
+		beam_energy = 9.889;
 	}
 	else if( runnum >= 13239 && runnum <= 13407 ){
-		beam_energy = 5.965;
+		beam_energy = 5.9828;
 	}
 	else if( runnum >= 13444 && runnum <= 13620 ){
-		beam_energy = 5.965;
+		beam_energy = 5.9826;
 	}
 	else if( runnum >= 13656 && runnum <= 13799 ){
-		beam_energy = 4.013;
+		beam_energy = 4.0268;
 	}
 	else{ beam_energy = -1.111; }
 
@@ -1067,12 +1067,12 @@ void lookup_kinematic_info(const int sbs)
 	vector<vector<double>> kinematic_info = { //{sbs#, Ebeam(GeV), BBangle(deg), BBdistance(m), SBS angle(deg), HCal angle(deg), HCal distance(m), Q^2(GeV^2) }
 
 		{ 1, 1.916, 51.0, 1.85, 33.5, 34.5, 13.5, 1.55 },
-		{ 4, 3.728, 36.0, 1.80, 31.9, 31.9, 11.0, 3.0 },
-		{ 7, 7.906, 40, 1.85, 16, 16, 14, 9.8 },
-		{ 11, 9.86, 42.0, 1.55, 13.3, 13.3, 14.5, 13.5 },
-		{ 14, 5.965, 46.5, 1.85, 17.3, 17.3, 14.0, 7.4 },
-		{ 8, 5.965, 26.5, 2.00, 29.9, 29.4, 11.0, 4.5 },
-		{ 9, 4.015, 49.0, 1.55, 22.5, 22.0, 11.0, 4.5 }
+		{ 4, 3.7393, 36.0, 1.80, 31.9, 31.9, 11.0, 3.0 },
+		{ 7, 7.9308, 40, 1.85, 16, 16, 14, 9.8 },
+		{ 11, 9.889, 42.0, 1.55, 13.3, 13.3, 14.5, 13.5 },
+		{ 14, 5.9828, 46.5, 1.85, 17.3, 17.3, 14.0, 7.4 },
+		{ 8, 5.9826, 26.5, 2.00, 29.9, 29.4, 11.0, 4.5 },
+		{ 9, 4.0268, 49.0, 1.55, 22.5, 22.0, 11.0, 4.5 }
 	};
 
 	if ( sbs==1 || sbs==4 || sbs==7 || sbs==11 || sbs==14 || sbs==8 || sbs==9) 
