@@ -1,13 +1,17 @@
+#include <Math/Vector4D.h>
+#include <Math/Vector3D.h>
+#include "TLorentzVector.h"
+#include "TVector3.h"
+#include "HCalConstants.h"
+
 #ifndef CALC_HCALINTERSECT_H
 #define CALC_HCALINTERSECT_H
 
-#include "HCalConstants.h"
-
 //Defining HCal vectors
-TVector3 hcal_origin; // Vector pointing to the origin of HCal starting from the origin of the Hall coordinate system.
-TVector3 hcalXaxis;				
-TVector3 hcalYaxis;
-TVector3 hcalZaxis;
+ROOT::Math::XYZVector hcal_origin; // Vector pointing to the origin of HCal starting from the origin of the Hall coordinate system.
+ROOT::Math::XYZVector hcalXaxis;				
+ROOT::Math::XYZVector hcalYaxis;
+ROOT::Math::XYZVector hcalZaxis;
 
 void make_HCal_vectors(double hcaldist, double hcaltheta)
 {
@@ -48,26 +52,26 @@ void make_HCal_vectors_forsim(double hcaldist, double hcaltheta)
 // Vector calculation to find the vector that starts from the orgin of the Hall cordinate system and points to spot on the face of the HCal that the nucleon strikes.
 /*void calc_expected_xyonHCal(double vz[10], double &xexpected_hcal, double &yexpected_hcal)
 {
-	TVector3 qdirection = q.Vect().Unit(); //Unit vector defining the direction of the spacial component of the q.
-	TVector3 vertex(0,0,vz[0]); // Vertex vector (the vector going from the origin of the Hall coordinate system(~middle of the target) to the (e,e'p/n) interaction point)
-	TVector3 vertextoHCalorigin = hcal_position - vertex;
+	ROOT::Math::XYZVector qdirection = q.Vect().Unit(); //Unit vector defining the direction of the spacial component of the q.
+	ROOT::Math::XYZVector vertex(0,0,vz[0]); // Vertex vector (the vector going from the origin of the Hall coordinate system(~middle of the target) to the (e,e'p/n) interaction point)
+	ROOT::Math::XYZVector vertextoHCalorigin = hcal_position - vertex;
 	double hcalZdistancefromvertex = vertextoHCalorigin.Dot(hcalZaxis);
 	double hadronvectormagnitude = hcalZdistancefromvertex/qdirection.Dot(hcalZaxis);
-	TVector3 hcalintersect = hadronvectormagnitude*qdirection + vertex;
+	ROOT::Math::XYZVector hcalintersect = hadronvectormagnitude*qdirection + vertex;
 
 	xexpected_hcal = hcalintersect.Dot(hcalXaxis);
 	yexpected_hcal = hcalintersect.Dot(hcalYaxis);
 }*/
 
 // Vector calculation to find the vector that starts from the orgin of the Hall cordinate system and points to spot on the face of the HCal that the nucleon strikes.
-void calc_expected_xyonHCal(TLorentzVector q, double vz[10], double &xexpected_hcal, double &yexpected_hcal)
+void calc_expected_xyonHCal(ROOT::Math::PxPyPzEVector& q, double vz[10], double& xexpected_hcal, double& yexpected_hcal)
 {
-	TVector3 vertex(0,0,vz[0]); // Vertex vector (the vector going from the origin of the Hall coordinate system(~middle of the target) to the (e,e'p/n) interaction point)
-	TVector3 vertextoHCalorigin = hcal_origin - vertex;
+	ROOT::Math::XYZVector vertex(0,0,vz[0]); // Vertex vector (the vector going from the origin of the Hall coordinate system(~middle of the target) to the (e,e'p/n) interaction point)
+	ROOT::Math::XYZVector vertextoHCalorigin = hcal_origin - vertex;
 	double hcalZdistancefromvertex = vertextoHCalorigin.Dot(hcalZaxis);
-	TVector3 qdirection = q.Vect().Unit(); //Unit vector defining the direction of the spacial component of the q.
+	ROOT::Math::XYZVector qdirection = q.Vect().Unit(); //Unit vector defining the direction of the spacial component of the q.
 	double hadronvectormagnitude = hcalZdistancefromvertex/qdirection.Dot(hcalZaxis);
-	TVector3 hcalintersect = hadronvectormagnitude*qdirection + vertex;
+	ROOT::Math::XYZVector hcalintersect = hadronvectormagnitude*qdirection + vertex;
 
 	xexpected_hcal = (hcalintersect-hcal_origin).Dot(hcalXaxis);
 	yexpected_hcal = (hcalintersect-hcal_origin).Dot(hcalYaxis);

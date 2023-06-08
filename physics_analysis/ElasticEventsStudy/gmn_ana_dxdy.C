@@ -16,6 +16,7 @@
 #include "TCut.h"
 #include "TEventList.h"
 #include "TLorentzVector.h"
+#include <Math/Vector4D.h>
 #include "TVector3.h"
 #include "TMath.h"
 #include "TH1D.h"
@@ -26,15 +27,16 @@
 #include "HCalConstants.h"
 #include "calc_HCalintersect.h"
 #include "fiducialcut.h"
+#include "constants.h"
 
-const double target_mass{0.5*(0.938272+0.939565)}; //Average of neutron and proton mass.
+const double target_mass{0.5*(Constants::n_mass + Constants::p_mass)}; //Average of neutron and proton mass.
 
 void apply_globalcuts(TChain*, TEventList*, long&, long&);
 void get_TDC_times(int, double [1000], double [1000], double&, double&, double&, double&);
 void print_analysis_percentage(double, int&);
 
 
-void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* configfilename = "setup_analysis.cfg", const char* outputrootfilename = "gmn_ana_output")
+void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* configfilename = "setup_dxdy_analysis.cfg", const char* outputrootfilename = "gmn_ana_output")
 {
 	auto total_time_start = std::chrono::high_resolution_clock::now();
 
@@ -167,8 +169,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	
 
 	//Defining the constant 4-vecors of the incoming beam electrons and the target 
-	TLorentzVector Pbeam(0,0,Ebeam,Ebeam);
-	TLorentzVector Ptarg(0,0,0,target_mass);
+	ROOT::Math::PxPyPzEVector Pbeam(0,0,Ebeam,Ebeam);
+	ROOT::Math::PxPyPzEVector Ptarg(0,0,0,target_mass);
 
 	make_HCal_vectors(hcaldist,hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
 
@@ -198,9 +200,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		print_analysis_percentage(ana_percentage,previousevent_ana_percentage_int);
 
 		// Calculating q 
-		TLorentzVector kprime; //Four vector of the scattered electron.
+		ROOT::Math::PxPyPzEVector kprime; //Four vector of the scattered electron.
 		kprime.SetPxPyPzE(epx[0],epy[0],epz[0],ep[0]); 
-		TLorentzVector q;      //Four momentum trasnferred to the scattered nucleon.
+		ROOT::Math::PxPyPzEVector q;      //Four momentum trasnferred to the scattered nucleon.
 		q = Pbeam - kprime; 
 		W2 = (Ptarg+q).M2();    // Calculates the invariant mass squared (W^2) of the virtual photon - nucleon system.
 		h1_W2_all->Fill(W2);
