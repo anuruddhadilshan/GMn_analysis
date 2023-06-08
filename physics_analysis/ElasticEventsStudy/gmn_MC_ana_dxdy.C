@@ -177,8 +177,8 @@ void gmn_MC_ana_dxdy(const int kine_num, const double sbsfieldscale, const char*
 	
 
 	//Defining the constant 4-vecors of the incoming beam electrons and the target 
-	TLorentzVector Pbeam(0,0,Ebeam,Ebeam);
-	TLorentzVector Ptarg(0,0,0,target_mass);
+	ROOT::Math::PxPyPzEVector Pbeam(0,0,Ebeam,Ebeam);
+	ROOT::Math::PxPyPzEVector Ptarg(0,0,0,target_mass);
 
 	make_HCal_vectors_forsim(hcaldist,hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
 	//make_HCal_vectors_forsim(hcaldist,sbstheta);
@@ -212,9 +212,9 @@ void gmn_MC_ana_dxdy(const int kine_num, const double sbsfieldscale, const char*
 		print_analysis_percentage(ana_percentage,previousevent_ana_percentage_int);
 
 		// Calculating q 
-		TLorentzVector kprime; //Four vector of the scattered electron.
+		ROOT::Math::PxPyPzEVector kprime; //Four vector of the scattered electron.
 		kprime.SetPxPyPzE(epx[0],epy[0],epz[0],ep[0]); 
-		TLorentzVector q;      //Four momentum trasnferred to the scattered nucleon.
+		ROOT::Math::PxPyPzEVector q;      //Four momentum trasnferred to the scattered nucleon.
 		q = Pbeam - kprime; 
 		W2 = (Ptarg+q).M2();    // Calculates the invariant mass squared (W^2) of the virtual photon - nucleon system.
 		h1_W2_all->Fill(W2);
