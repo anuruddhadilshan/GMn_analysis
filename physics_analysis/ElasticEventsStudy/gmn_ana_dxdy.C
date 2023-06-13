@@ -28,6 +28,9 @@
 #include "calc_HCalintersect.h"
 #include "fiducialcut.h"
 #include "constants.h"
+#include "exprconstants.h"
+#include "calc_thetapq.h"
+
 
 const double target_mass{0.5*(Constants::n_mass + Constants::p_mass)}; //Average of neutron and proton mass.
 
@@ -40,8 +43,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 {
 	auto total_time_start = std::chrono::high_resolution_clock::now();
 
-	//readin_beamvariables(runnum); // Reads in kinematic variables that are a constant to the given configuration, from the "beam_variables.h" file.
-	lookup_kinematic_info(kine_num);
+	lookup_kinematic_info(kine_num); // Reads in kinematic variables that are a constant to the given configuration, from the "beam_variables.h" file.
 
 	TChain* C = new TChain("T"); //Initialize the TChain to chain the root files for analysis.
 	
@@ -51,15 +53,17 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	TEventList* elist = new TEventList("elist","");
 	long nevents_TChain{0};
 	long nevents_eventlist{0};
-	apply_globalcuts(C,elist,nevents_TChain,nevents_eventlist); // Make the event list passing the global cuts out of the TChain.
+	//apply_globalcuts(C,elist,nevents_TChain,nevents_eventlist); // Make the event list passing the global cuts out of the TChain.
+	nevents_TChain = C->GetEntries();
 
-	double average_proton_deflection{getavg_proton_deflection(kine_num,sbsfieldscale)};
+	double average_proton_deflection{getavg_proton_deflection(kine_num,sbsfieldscale)}; // This value is needed for the fiducial cut. NEEDS to be RE EVALUATED.
 
 	std::cout<<"\n--- Beginning Physics Analysis ---" <<'\n';
 
 	const int MAXNTRACKS{10};
 	const int MAXNTDC{1000};
 
+	// Define the variables needed to save information from ROOT tree for each event.
 	//variables needed are BigBite track px,py,pz and sbs hcal x,y,e
  	double ntrack{0.};
  	double vz[MAXNTRACKS];
@@ -77,6 +81,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	int ndata_tdc{0};
 	double hcal_clusblk_ADC_time[15]; // Maximum number of blocks in a cluster is 15 as per S.Seeds.
 
+	// Initialize the TTree variables.
 	C->SetBranchStatus("*",0);
 	C->SetBranchStatus("bb.tr.n",1);
 	C->SetBranchStatus("bb.tr.vz",1);
@@ -94,6 +99,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	C->SetBranchStatus("Ndata.bb.tdctrig.tdcelemID",1);
 	C->SetBranchStatus("sbs.hcal.clus_blk.atime",1);
 
+	// Associate the TTree variables with the local varibales defined above.
 	C->SetBranchAddress("bb.tr.n",&ntrack);
 	C->SetBranchAddress("bb.tr.vz",vz);
 	C->SetBranchAddress("bb.tr.px",epx);
@@ -116,17 +122,21 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	TTree* tree = new TTree("T","Analysis outputs from the gmn_ana_dxdy.C script");
 
 	// Define variables that are not already define that needs to be written to the analys output tree,
+	double Q2{0.};
 	double W2{0.};
+	double theta_pq{0.};
 	double xexpected_hcal{0.};
 	double yexpected_hcal{0.};
 	double delta_x{0.};
 	double delta_y{0.};
 	double bbcalHcal_time_diff{0};
-	double ps_sh_e{};
-	double e_over_p{};
+	double ps_sh_e{0.};
+	double e_over_p{0.};
 
 	// Output tree branch definitions.
+	tree->Branch("ekine.Q2", &Q2);
 	tree->Branch("ekine.W2", &W2);
+	tree->Branch("theta_pq", &theta_pq);
 	tree->Branch("bb.tr.vz0", &vz[0]);
 	tree->Branch("bb.sh.e", &bbsh_e);
 	tree->Branch("bb.ps.e", &bbps_e);
@@ -143,7 +153,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 
 	// Histogram definitions.
 	TH1D* h1_W2_all = new TH1D("h1_W2_all","W^2 of all the events passing the global cut; W^2 (GeV^2/c^4)",250,-1,4);
-	TH1D* h1_W2_withcuts = new TH1D("h1_W2_withcuts","W^2 after all the cuts; W^2 (GeV^2/c^4)",250,-1,4);
+	TH1D* h1_Q2_all = new TH1D("h1_Q2_all", "Q^2 of all the events passing the global cut; Q^2 (=-q^2) (GeV^2/c^2)",200,-2,18);
+	TH1D* h1_W2_withcuts = new TH1D("h1_W2_withcuts","W^2 of events passing all the cuts; W^2 (GeV^2/c^4)",250,-1,4);
+	TH1D* h1_Q2_withcuts = new TH1D("h1_Q2_withcuts", "Q^2 of events passing all the cuts; Q^2 (=-q^2) (GeV^2/c^2)",200,-2,18);
 	TH1D* h1_bbtrackvertz_withcuts = new TH1D("h1_bbtrackvertz_withcuts","BB Track vertex Z position; vertex Z (m)",600,-0.15,0.15);
 	TH1D* h1_bbshower_e_withcuts = new TH1D("h1_bbshower_e_withcuts","Energy Deopsited in BB Shower; Energy (GeV)",500,0,5);
 	TH1D* h1_bbpreshower_e_withcuts = new TH1D("h1_bbpreshower_e_withcuts","Energy Deopsited in BB Pre Shower; Energy (GeV)",500,0,5);
@@ -172,7 +184,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	ROOT::Math::PxPyPzEVector Pbeam(0,0,Ebeam,Ebeam);
 	ROOT::Math::PxPyPzEVector Ptarg(0,0,0,target_mass);
 
-	make_HCal_vectors(hcaldist,hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
+	HCalVectors hcal; // Defined an object named "hcal" 
+	hcal.make_HCal_vectors(hcaldist, hcaltheta); //Creates constant vectors that definces the postion of the HCal w.r.t Hall coordinate system.
+	//make_HCal_vectors(hcaldist, hcaltheta);
 
 	//const double tdiffmax = 20; // Max deviation from coin via tdctrig cut.
 
@@ -193,29 +207,39 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	long n_fiducialcut{0};
 	long n_hcal_clusblk_atime_cut{0};
 
-	while (C->GetEntry(elist->GetEntry(nevent++)))
+	while (C->GetEntry(nevent++))
 	{
 		
-		double ana_percentage{(nevent/(double)nevents_eventlist)*100}; //Percentage of events analyzed in the Event List.
+		double ana_percentage{(nevent/(double)nevents_TChain)*100}; //Percentage of events analyzed in the Event List.
 		print_analysis_percentage(ana_percentage,previousevent_ana_percentage_int);
 
 		// Calculating q 
 		ROOT::Math::PxPyPzEVector kprime; //Four vector of the scattered electron.
 		kprime.SetPxPyPzE(epx[0],epy[0],epz[0],ep[0]); 
-		ROOT::Math::PxPyPzEVector q;      //Four momentum trasnferred to the scattered nucleon.
+		ROOT::Math::PxPyPzEVector q;     //Four momentum trasnferred to the scattered nucleon.
 		q = Pbeam - kprime; 
+		Q2 = -q.M2();
 		W2 = (Ptarg+q).M2();    // Calculates the invariant mass squared (W^2) of the virtual photon - nucleon system.
+
 		h1_W2_all->Fill(W2);
+		h1_Q2_all->Fill(Q2);
 
 		// Calculating the dx and dy for hits on HCal
-		calc_expected_xyonHCal(q,vz,xexpected_hcal,yexpected_hcal); // Calculating the intersection point on HCal.
+		hcal.calc_expected_xyonHCal(q, vz); // Calculating the intersection point on HCal.
+		//calc_expected_xyonHCal(q, vz, xexpected_hcal, yexpected_hcal);
+		xexpected_hcal = hcal.return_xexpected();
+		yexpected_hcal = hcal.return_yexpected();
 		delta_x = xhcal-xexpected_hcal;
 		delta_y = yhcal-yexpected_hcal;
 		// Fill dx dy histos with all the events.
 		h2_dxdy_all->Fill(delta_y,delta_x);
 		h1_dx_all->Fill(delta_x);
 		h1_dy_all->Fill(delta_y);
-				
+
+		// Calculate theta_pq
+		Calc_thetapq calc_thetapq;
+		theta_pq = calc_thetapq.return_thetaPq(hcal, xhcal, yhcal);
+						
 		// Calculate BBCal and HCal coincidence times
 		double bbcal_time{0.};
 		double hcal_time{0.};
@@ -333,6 +357,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 
 		//Filling histograms with the events passing the cuts.
 		h1_W2_withcuts->Fill(W2);     // Fill the 1D histogram of W^2 of all the events analyzed.
+		h1_Q2_withcuts->Fill(Q2);
 		h1_bbtrackvertz_withcuts->Fill(vz[0]);
 		h1_bbshower_e_withcuts->Fill(bbsh_e);
 		h1_bbpreshower_e_withcuts->Fill(bbps_e);
@@ -355,7 +380,7 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		elastic_yield++;
 	}
 	
-	elist->Delete();
+	//elist->Delete();
 	tree->Write();
 	fout->Write();
 
@@ -396,7 +421,7 @@ void apply_globalcuts(TChain* C, TEventList* elist, long& nevents_TChain, long& 
 	nevents_TChain = C->GetEntries();
 	std::cout<<"\nNumber of events in the TChain = " << nevents_TChain <<'\n';
 	std::cout<<"--- Begin applying global cuts = " << globalcut << " ---" <<'\n';
-	C->Draw(">>elist",globalcut);
+	C->Draw(">>elist",globalcut); // "globalcut" is read in from the configuration file.
 	std::cout<<"--- Done applying global cuts ---" <<'\n';
 	nevents_eventlist = elist->GetN();	
 	std::cout<<"Number of events in the eventlist = " << nevents_eventlist <<'\n';
