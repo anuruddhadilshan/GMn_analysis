@@ -22,14 +22,14 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TStopwatch.h"
-#include "beam_variables.h"
-#include "readconfigfile.h"
-#include "HCalConstants.h"
-#include "calc_HCalintersect.h"
-#include "fiducialcut.h"
-#include "constants.h"
-#include "exprconstants.h"
-#include "calc_thetapq.h"
+#include "includes/beam_variables.h"
+#include "includes/readconfigfile.h"
+#include "includes/HCalConstants.h"
+#include "includes/calc_HCalintersect.h"
+#include "includes/fiducialcut.h"
+#include "includes/constants.h"
+#include "includes/exprconstants.h"
+#include "includes/calc_thetapq.h"
 
 
 const double target_mass{0.5*(Constants::n_mass + Constants::p_mass)}; //Average of neutron and proton mass.
@@ -156,6 +156,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	TH1D* h1_Q2_all = new TH1D("h1_Q2_all", "Q^2 of all the events passing the global cut; Q^2 (=-q^2) (GeV^2/c^2)",200,-2,18);
 	TH1D* h1_W2_withcuts = new TH1D("h1_W2_withcuts","W^2 of events passing all the cuts; W^2 (GeV^2/c^4)",250,-1,4);
 	TH1D* h1_Q2_withcuts = new TH1D("h1_Q2_withcuts", "Q^2 of events passing all the cuts; Q^2 (=-q^2) (GeV^2/c^2)",200,-2,18);
+	TH1D* h1_thetapq_all = new TH1D("h1_thetapq_all", "#theta_{pq} for all the events without eleastic cuts; #theta_{pq}", 1000, 0, 10);
+	TH2D* h2_thetapq_vs_W2_all = new TH2D("h2_thetapq_vs_W2_all", "#theta_{pq} vs W^{2} for all the events without elastic cuts; W^{2}; #theta_{pq} degrees", 100, 0.4, 1.4, 1000, 0, 10);
 	TH1D* h1_bbtrackvertz_withcuts = new TH1D("h1_bbtrackvertz_withcuts","BB Track vertex Z position; vertex Z (m)",600,-0.15,0.15);
 	TH1D* h1_bbshower_e_withcuts = new TH1D("h1_bbshower_e_withcuts","Energy Deopsited in BB Shower; Energy (GeV)",500,0,5);
 	TH1D* h1_bbpreshower_e_withcuts = new TH1D("h1_bbpreshower_e_withcuts","Energy Deopsited in BB Pre Shower; Energy (GeV)",500,0,5);
@@ -178,7 +180,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 	//TH2D* h2_hcal_xy = new TH2D("h2_hcal_xy","HCal XY plots - good events with cuts;Y_{HCal} (m);X_{HCal} (m)",125,-2,2,125,-4,6);
 	TH2D* h2_hcal_xyexpected = new TH2D("h2_hcal_xyexpected","HCal XY_expected Surviving Fiducial Cut;Y_{Expected} (m);X_{Expected} (m)",125,-2,2,125,-4,6);
 	TH2D* h2_hcal_xyexpected_failfiducial = new TH2D("h2_hcal_xyexpected_failfiducial","HCal XY_expected Fail Fiducial Cut;Y_{Expected} (m);X_{Expected} (m)",125,-2,2,125,-4,6);
-	
+	TH1D* h1_thetapq = new TH1D("h1_thetapq", "#theta_{pq} after elastic cuts; #theta_{pq}", 1000, 0, 10);
+	TH2D* h2_thetapq_vs_W2 = new TH2D("h2_thetapq_vs_W2", "#theta_{pq} vs W^{2}; W^{2}; #theta_{pq} degrees", 100, 0.4, 1.4, 1000, 0, 10);
 
 	//Defining the constant 4-vecors of the incoming beam electrons and the target 
 	ROOT::Math::PxPyPzEVector Pbeam(0,0,Ebeam,Ebeam);
@@ -239,6 +242,9 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		// Calculate theta_pq
 		Calc_thetapq calc_thetapq;
 		theta_pq = calc_thetapq.return_thetaPq(hcal, xhcal, yhcal);
+
+		h1_thetapq_all->Fill(theta_pq);
+		h2_thetapq_vs_W2_all->Fill(W2,theta_pq);
 						
 		// Calculate BBCal and HCal coincidence times
 		double bbcal_time{0.};
@@ -373,6 +379,8 @@ void gmn_ana_dxdy(const int kine_num, const double sbsfieldscale, const char* co
 		//h1_hcaly->Fill(yhcal);
 		//h2_hcal_xy->Fill(yhcal,xhcal);
 		h2_hcal_xyexpected->Fill(yexpected_hcal,xexpected_hcal);
+		h1_thetapq->Fill(theta_pq);
+		h2_thetapq_vs_W2->Fill(W2,theta_pq);
 
 		// Fill the tree
 		tree->Fill();

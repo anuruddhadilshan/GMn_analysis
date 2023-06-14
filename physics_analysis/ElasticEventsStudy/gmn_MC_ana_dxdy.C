@@ -21,13 +21,13 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TStopwatch.h"
-#include "beam_variables.h"
-#include "readconfigfile.h"
-#include "HCalConstants.h"
-#include "calc_HCalintersect.h"
-#include "fiducialcut.h"
-#include "constants.h"
-#include "exprconstants.h"
+#include "includes/beam_variables.h"
+#include "includes/readconfigfile.h"
+#include "includes/HCalConstants.h"
+#include "includes/calc_HCalintersect.h"
+#include "includes/fiducialcut.h"
+#include "includes/constants.h"
+#include "includes/exprconstants.h"
 
 const double target_mass{0.5*(Constants::n_mass + Constants::p_mass)}; //Average of neutron and proton mass. 
 
