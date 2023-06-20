@@ -10,6 +10,7 @@
  
 std::vector<int> makeRunnumvec(TString target, int kin_num, int sbsfieldscale);
 std::vector<std::string> getFileNamesWithSubstring(TString input_dirpath, int runnum);
+bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TString outfilename_preint, TCut globalcut);
 
 
 int parse_gmn_rootfiles(const char* configfilename)
@@ -59,45 +60,13 @@ int parse_gmn_rootfiles(const char* configfilename)
 
 		std::cout << "*Run number: " << runnum << '\n';
 
-		/*for(const auto& fileName : run_segset_names_vec)
-		{
-			std::cout << fileName << '\n'; 
-		}*/
-		
 		//// Loop over each and every ROOT file in the run_segset_names_vec and create a parsed ROOT file for each and every ROOT file in the vector ////
 		for(const auto& rootfile_name : run_segset_names_vec)
 		{
-			// Open input root file. Copy the Trees.
-			TFile* inputrootfile = new TFile(Form("%s/%s", input_ROOTfile_dirpath.Data(), rootfile_name.c_str()), "OPEN"); 
-			TTree* in_T = (TTree*)inputrootfile->Get("T");
-			TTree* in_E = (TTree*)inputrootfile->Get("E");
-			TTree* in_TSLeft = (TTree*)inputrootfile->Get("TSLeft");
-			TTree* in_TSsbs = (TTree*)inputrootfile->Get("TSsbs");
+			//Making the parsed ROOT files.
+			bool is_success = makeParsedROOTfile(input_ROOTfile_dirpath, rootfile_name, output_dir_path, outfilename_preint, globalcut);
 
-			TString outrootfilename;
-
-			if (outfilename_preint.CompareTo("") == 0)
-			{
-				outrootfilename = Form("parsed-%s", rootfile_name.c_str());				
-			}
-			else
-			{
-				outrootfilename = Form("%s.root", outfilename_preint.Data());
-			}
-
-			TFile* output_rootfile = new TFile(Form("%s/%s", output_dir_path.Data(), outrootfilename.Data()),"RECREATE");
-
-			std::cout << "**Making the parsed ROOT file for file: " << rootfile_name << '\n';
-
-			//Cloning the E, TSLeft, and TSsbs trees.
-			TTree* E = in_E->CloneTree();
-			TTree* TSLeft = in_TSLeft->CloneTree();
-			TTree* TSsbs = in_TSsbs->CloneTree();
-
-			//Making a copy of the main "T" tree with the provided global cuts applied.
-			TTree* T = in_T->CopyTree(globalcut);
-			
-			output_rootfile->Write();
+			if(!is_success) continue; // Skip to the next file if there is an eroor with parsing the rootfile.
 		}
 
 		std::cout << '\n';
@@ -156,4 +125,54 @@ std::vector<std::string> getFileNamesWithSubstring(TString input_dirpath, int ru
     closedir(dir);
 
     return fileNames;
+}
+
+bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TString outfilename_preint, TCut globalcut)
+{
+	// Open input root file. Copy the Trees.
+	TFile* inputrootfile = new TFile(Form("%s/%s", input_ROOTfile_dirpath.Data(), rootfile_name.c_str()), "OPEN"); 
+	TTree* in_T = (TTree*)inputrootfile->Get("T");
+	
+	if (in_T == nullptr) 
+	{
+		std::cout << "Problem with accessing the T tree. Skipping parsing the ROOT file: " << rootfile_name << '\n'; 
+		return false; // We don't need to try continue and parse the root file if there is a problem with accessing the maing T event tree.
+	}
+
+	TTree* in_E = (TTree*)inputrootfile->Get("E");
+	TTree* in_TSLeft = (TTree*)inputrootfile->Get("TSLeft");
+	TTree* in_TSsbs = (TTree*)inputrootfile->Get("TSsbs");
+	
+	TString outrootfilename;
+
+	if (outfilename_preint.CompareTo("") == 0)
+	{
+		outrootfilename = Form("parsed-%s", rootfile_name.c_str());				
+	}
+	else
+	{
+		outrootfilename = Form("%s.root", outfilename_preint.Data());
+	}
+
+	TFile* output_rootfile = new TFile(Form("%s/%s", output_dir_path.Data(), outrootfilename.Data()),"RECREATE");
+
+	std::cout << "**Making the parsed ROOT file for file: " << rootfile_name << '\n';
+
+	//Cloning the E, TSLeft, and TSsbs trees.
+	TTree* E; 
+	if(in_E != nullptr) E = in_E->CloneTree();
+
+	TTree* TSLeft; 
+	if(in_TSLeft != nullptr) TSLeft = in_TSLeft->CloneTree();
+
+	TTree* TSsbs; 
+	if(in_TSsbs != nullptr) TSsbs = in_TSsbs->CloneTree();
+
+	//Making a copy of the main "T" tree with the provided global cuts applied.
+	TTree* T; 
+	T = in_T->CopyTree(globalcut);
+		
+	output_rootfile->Write();
+
+	return true;
 }
