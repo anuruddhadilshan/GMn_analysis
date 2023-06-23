@@ -1,16 +1,16 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
-#include <string>
+#include <string> 
 #include <cstring>
 #include <dirent.h>
-#include "includes/read_parsescript_config.h"
-#include "includes/beam_variables.h"
+#include "/work/halla/sbs/adr/GMn_analysis/physics_analysis/ElasticEventsStudy/includes/read_parsescript_config.h"
+#include "/work/halla/sbs/adr/GMn_analysis/physics_analysis/ElasticEventsStudy/includes/beam_variables.h"
 
  
 std::vector<int> makeRunnumvec(TString target, int kin_num, int sbsfieldscale);
 std::vector<std::string> getFileNamesWithSubstring(TString input_dirpath, int runnum);
-bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TString outfilename_preint, TCut globalcut);
+bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TCut globalcut);
 
 
 int parse_gmn_rootfiles(const char* configfilename)
@@ -44,7 +44,6 @@ int parse_gmn_rootfiles(const char* configfilename)
 
 	TString input_ROOTfile_dirpath = configfile.return_inputdir();
 	TString output_dir_path = configfile.return_outputdir();
-	TString outfilename_preint = configfile.return_outfilename_preint();
 	TCut globalcut = configfile.return_globalcut();
 	
 	//// Loop over each and every run number in the runnum_vec, and copy the ROOT file names into a another vector, run_segset_names_vec. ////
@@ -64,7 +63,7 @@ int parse_gmn_rootfiles(const char* configfilename)
 		for(const auto& rootfile_name : run_segset_names_vec)
 		{
 			//Making the parsed ROOT files.
-			bool is_success = makeParsedROOTfile(input_ROOTfile_dirpath, rootfile_name, output_dir_path, outfilename_preint, globalcut);
+			bool is_success = makeParsedROOTfile(input_ROOTfile_dirpath, rootfile_name, output_dir_path, globalcut);
 
 			if(!is_success) continue; // Skip to the next file if there is an eroor with parsing the rootfile.
 		}
@@ -127,7 +126,7 @@ std::vector<std::string> getFileNamesWithSubstring(TString input_dirpath, int ru
     return fileNames;
 }
 
-bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TString outfilename_preint, TCut globalcut)
+bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_name, TString output_dir_path, TCut globalcut)
 {
 	// Open input root file. Copy the Trees.
 	TFile* inputrootfile = new TFile(Form("%s/%s", input_ROOTfile_dirpath.Data(), rootfile_name.c_str()), "OPEN"); 
@@ -143,16 +142,7 @@ bool makeParsedROOTfile(TString input_ROOTfile_dirpath, std::string rootfile_nam
 	TTree* in_TSLeft = (TTree*)inputrootfile->Get("TSLeft");
 	TTree* in_TSsbs = (TTree*)inputrootfile->Get("TSsbs");
 	
-	TString outrootfilename;
-
-	if (outfilename_preint.CompareTo("") == 0)
-	{
-		outrootfilename = Form("parsed-%s", rootfile_name.c_str());				
-	}
-	else
-	{
-		outrootfilename = Form("%s.root", outfilename_preint.Data());
-	}
+	TString outrootfilename = Form("parsed_%s", rootfile_name.c_str());
 
 	TFile* output_rootfile = new TFile(Form("%s/%s", output_dir_path.Data(), outrootfilename.Data()),"RECREATE");
 
