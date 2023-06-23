@@ -14,7 +14,7 @@ Credit goes to Sebastian Seeds for the initial idea of using parsed-down ROOT fi
 4. `submit-parse_gmn_rootfiles.sh`: The shell script that the user will have to execute to submit the parsing jobs either into the ifarm or into the batch farm.
 
 ## 3. Quick start guide:
-1. Inside the directory where all the above mentioned scripts exists, create the `<use given name>.cfg` configuration file, following the provided `parse_gmn_rootfiles.cfg` file, and change the input fields as required.
+1. Inside the directory where all the above mentioned scripts exists, create the `<user given name>.cfg` configuration file, following the provided `parse_gmn_rootfiles.cfg` file, and change the input fields as required.
 2. Open the `submit-parse_gmn_rootfiles.sh` file and set the fields "SCRIPT_DIR" and "workflowname" with the user specific ones.
 3. Run the command: `$ submit-parse_gmn_rootfiles.sh <configfilename> 1` if it needs to be run on ifarm or replace 1 with any other integer to run on batch farm.
 
