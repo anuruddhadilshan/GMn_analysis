@@ -21,4 +21,4 @@ Credit goes to Sebastian Seeds for the initial idea of using parsed-down ROOT fi
 ## 4. Contact:
 For any questions or concerns, contact,
 >Anuruddha Rathnayake 
-><adr4zs@viginia.edu>  
+><adr4zs@virginia.edu>  
